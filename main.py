@@ -22,7 +22,17 @@ def add_task(task, desc=None):
     todoist.add_task(content=task,
                      description=desc)
 
-tools = [add_task]
+@tool
+def show_tasks():
+    """Show all tasks from Todoist. Use this tool when the user wants to see their tasks."""
+    results_paginator = todoist.get_tasks()
+    tasks = []
+    for task_list in results_paginator:
+        for task in task_list:
+            tasks.append(task.content)
+    return tasks
+
+tools = [add_task, show_tasks]
 
 llm = ChatGoogleGenerativeAI(
     model = 'gemini-2.5-flash',
@@ -30,11 +40,18 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.3
 )
 
-system_prompt = "You are a helpful assistant. You will help the user add tasks."
+system_prompt = """
+You are a helpful AI assistant.
+
+- You can answer general questions conversationally.
+- When the user asks to add or create a task, you should use the add_task tool.
+- When the user wants to see all tasks, you should use the show_tasks tool. If the user asks to show the tasks: for example, "show me the tasks" print out the tasks to the user. Print them in a bullet list format.
+- If the user is not asking to add a task, respond normally.
+"""
 
 prompt = ChatPromptTemplate([
     ("system", system_prompt),
-    MessagesPlaceholder("history")
+    MessagesPlaceholder("history"),
     ("user", "{input}"),
     MessagesPlaceholder("agent_scratchpad")
 ])
